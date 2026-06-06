@@ -26,9 +26,9 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
 let db   = null;
 let uid  = null;
 
-function setSyncStatus(icon, title) {
+function setSyncStatus(icon, label, title) {
   const el = document.getElementById('sync-status');
-  if (el) { el.textContent = icon; el.title = title; }
+  if (el) { el.textContent = icon + ' ' + label; el.title = title; }
 }
 
 if (CONFIGURED) {
@@ -36,17 +36,17 @@ if (CONFIGURED) {
   const auth = getAuth(app);
   db = getFirestore(app);
 
-  setSyncStatus('🔄', 'Connecting to cloud...');
+  setSyncStatus('🔄', 'Connecting…', 'Connecting to cloud save');
 
   signInAnonymously(auth).catch(err => {
     console.warn('Firebase sign-in failed:', err.message);
-    setSyncStatus('⚠️', 'Cloud save unavailable — progress saved locally');
+    setSyncStatus('⚠️', 'Local only', 'Cloud save unavailable — progress saved locally');
   });
 
   onAuthStateChanged(auth, async user => {
     if (!user) return;
     uid = user.uid;
-    setSyncStatus('☁️', 'Cloud save connected');
+    setSyncStatus('☁️', 'Saved', 'Progress saved to cloud');
 
     // load cloud save on sign-in
     try {
@@ -75,10 +75,10 @@ window.cloudSave = async function(stateObj) {
   if (!db || !uid) return;
   try {
     await setDoc(doc(db, 'saves', uid), stateObj, { merge: true });
-    setSyncStatus('✅', 'Progress saved to cloud');
-    setTimeout(() => setSyncStatus('☁️', 'Cloud save connected'), 2000);
+    setSyncStatus('✅', 'Saved', 'Progress saved to cloud');
+    setTimeout(() => setSyncStatus('☁️', 'Synced', 'Cloud save connected'), 2000);
   } catch(e) {
     console.warn('Cloud save failed:', e.message);
-    setSyncStatus('⚠️', 'Save failed — check connection');
+    setSyncStatus('⚠️', 'Save failed', 'Check your connection');
   }
 };
