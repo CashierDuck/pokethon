@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pokéthon Bootcamp — Learn Python with Pokémon</title>
+  <title>Pokéthon Bootcamp — Learn Python & DSA with Pokémon</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,7 +12,11 @@
   <header id="site-header">
     <div class="header-inner">
       <div class="logo" onclick="goHome()">
-        <div class="logo-ball"><div class="lb-top"></div><div class="lb-mid"><div class="lb-btn"></div></div><div class="lb-bot"></div></div>
+        <div class="logo-ball">
+          <div class="lb-top"></div>
+          <div class="lb-mid"><div class="lb-btn"></div></div>
+          <div class="lb-bot"></div>
+        </div>
         <span>Poké<strong>thon</strong></span>
       </div>
       <div class="header-center" id="header-progress-wrap" style="display:none">
@@ -21,14 +25,14 @@
         </div>
         <span class="header-xp-label" id="header-xp-label">0 XP</span>
       </div>
-      <div class="header-right" style="display:flex;align-items:center;gap:0.6rem">
+      <div class="header-right">
         <span id="sync-status" class="sync-status" title="Cloud save status"></span>
-        <button class="trainer-btn" id="trainer-btn" onclick="openTrainer()">🎮 Trainer Card</button>
+        <button class="trainer-btn" onclick="openTrainer()">Trainer Card</button>
       </div>
     </div>
   </header>
 
-  <!-- ═══ HOME / SPLASH ═══ -->
+  <!-- ═══ SCREEN: NAME ═══ -->
   <div id="screen-home" class="screen active">
     <div class="splash">
       <div class="splash-pokeball">
@@ -37,42 +41,73 @@
         <div class="sp-bot"></div>
       </div>
       <h1>Pokéthon <span class="accent">Bootcamp</span></h1>
-      <p class="splash-sub">An interactive Python training journey — taught entirely with Pokémon.</p>
+      <p class="splash-sub">Learn Python, Data Structures & Algorithms — the Pokémon way.<br/>Everything you need to pass technical interviews.</p>
       <div class="splash-badges">
-        <span class="sbadge">⚡ 10 Lessons</span>
+        <span class="sbadge">🐍 Python</span>
+        <span class="sbadge">🗂️ DSA</span>
         <span class="sbadge">🧩 Quizzes</span>
         <span class="sbadge">💻 Live Code</span>
         <span class="sbadge">⚔️ LeetCode</span>
-        <span class="sbadge">🏆 XP + Badges</span>
+        <span class="sbadge">🏆 XP</span>
       </div>
       <div class="splash-name-wrap">
-        <label>Enter your trainer name:</label>
+        <label>Enter your trainer name</label>
         <input id="trainer-name-input" type="text" placeholder="Ash Ketchum" maxlength="20" />
-        <button class="cta-btn" onclick="startBootcamp()">Begin Training →</button>
+        <button class="cta-btn" onclick="goToStarterPick()">Choose Your Starter →</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══ BOOTCAMP MAIN ═══ -->
+  <!-- ═══ SCREEN: STARTER PICKER ═══ -->
+  <div id="screen-starter" class="screen">
+    <div class="starter-screen">
+      <h2>Choose Your <span class="accent">Starter</span></h2>
+      <p class="starter-intro">Your starter travels with you and evolves as you learn. Choose wisely, Trainer.</p>
+
+      <div class="gen-tabs" id="gen-tabs"></div>
+      <div class="starter-grid" id="starter-grid"></div>
+
+      <div class="starter-confirm hidden" id="starter-confirm">
+        <img id="starter-confirm-img" src="" alt="" />
+        <div class="starter-confirm-info">
+          <div class="starter-confirm-name" id="starter-confirm-name"></div>
+          <div class="starter-confirm-type" id="starter-confirm-type"></div>
+          <div class="starter-confirm-evo"  id="starter-confirm-evo"></div>
+        </div>
+        <button class="cta-btn" id="starter-go-btn" onclick="confirmStarter()">Let's Go! →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN: BOOTCAMP ═══ -->
   <div id="screen-bootcamp" class="screen">
     <div class="bootcamp-layout">
 
-      <!-- LEFT SIDEBAR -->
+      <!-- SIDEBAR -->
       <aside class="sidebar" id="sidebar">
+        <!-- starter widget -->
+        <div class="sidebar-starter" id="sidebar-starter"></div>
+
         <div class="sidebar-track">
-          <div class="track-label">PYTHON TRACK</div>
-          <div id="lesson-list" class="lesson-list"></div>
+          <div class="track-label">Python Fundamentals</div>
+          <div id="list-python" class="lesson-list"></div>
         </div>
         <div class="sidebar-track">
-          <div class="track-label">LEETCODE TRACK</div>
-          <div id="lc-list" class="lesson-list"></div>
+          <div class="track-label">Data Structures</div>
+          <div id="list-ds" class="lesson-list"></div>
+        </div>
+        <div class="sidebar-track">
+          <div class="track-label">Algorithms</div>
+          <div id="list-algo" class="lesson-list"></div>
+        </div>
+        <div class="sidebar-track">
+          <div class="track-label">LeetCode Patterns</div>
+          <div id="list-lc" class="lesson-list"></div>
         </div>
       </aside>
 
-      <!-- MAIN CONTENT AREA -->
-      <main class="main-content" id="main-content">
-        <!-- dynamically rendered -->
-      </main>
+      <!-- MAIN -->
+      <main class="main-content" id="main-content"></main>
 
     </div>
   </div>
@@ -83,7 +118,7 @@
       <div class="quiz-header">
         <div class="quiz-title-row">
           <span class="quiz-icon">🧩</span>
-          <h3 id="quiz-title">Quiz Time!</h3>
+          <h3 id="quiz-title">Quiz</h3>
         </div>
         <div class="quiz-progress-dots" id="quiz-dots"></div>
       </div>
@@ -91,43 +126,53 @@
     </div>
   </div>
 
-  <!-- ═══ TRAINER CARD MODAL ═══ -->
+  <!-- ═══ CATCH MODAL ═══ -->
+  <div id="catch-overlay" class="overlay hidden">
+    <div class="catch-modal">
+      <div class="catch-inner" id="catch-inner">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TRAINER CARD ═══ -->
   <div id="trainer-overlay" class="overlay hidden">
     <div class="trainer-card">
       <button class="close-btn" onclick="closeTrainer()">✕</button>
       <div class="tc-header">
-        <div class="tc-avatar" id="tc-avatar">🧢</div>
+        <div class="tc-avatar" id="tc-avatar"></div>
         <div class="tc-info">
-          <div class="tc-name" id="tc-name">Trainer</div>
-          <div class="tc-title" id="tc-title">Pokéthon Rookie</div>
+          <div class="tc-name"  id="tc-name">Trainer</div>
+          <div class="tc-title" id="tc-title">Rookie</div>
         </div>
       </div>
       <div class="tc-stats">
         <div class="tc-stat"><span class="tc-stat-val" id="tc-xp">0</span><span class="tc-stat-lbl">XP</span></div>
         <div class="tc-stat"><span class="tc-stat-val" id="tc-lessons">0</span><span class="tc-stat-lbl">Lessons</span></div>
-        <div class="tc-stat"><span class="tc-stat-val" id="tc-streak">0</span><span class="tc-stat-lbl">Streak</span></div>
+        <div class="tc-stat"><span class="tc-stat-val" id="tc-caught">0</span><span class="tc-stat-lbl">Caught</span></div>
       </div>
-      <div class="tc-badges-label">BADGES EARNED</div>
-      <div class="tc-badges" id="tc-badges"></div>
+      <div class="tc-section-label">STARTER</div>
+      <div class="tc-starter-row" id="tc-starter-row"></div>
+      <div class="tc-section-label" style="margin-top:1rem">POKÉMON CAUGHT</div>
+      <div class="tc-party" id="tc-party"></div>
     </div>
   </div>
 
   <!-- ═══ XP TOAST ═══ -->
   <div id="xp-toast" class="xp-toast hidden"></div>
 
-  <!-- ═══ LEVEL UP BANNER ═══ -->
+  <!-- ═══ COMPLETE BANNER ═══ -->
   <div id="levelup-banner" class="levelup-banner hidden">
     <div class="lu-inner">
-      <div class="lu-icon">🌟</div>
+      <div class="lu-icon" id="lu-icon">🌟</div>
       <div class="lu-text">
         <strong id="lu-title">Lesson Complete!</strong>
         <span id="lu-sub"></span>
       </div>
-      <button class="lu-next" id="lu-next-btn">Next Lesson →</button>
+      <button class="lu-next" id="lu-next-btn">Next →</button>
     </div>
   </div>
 
-  <!-- Firebase SDK -->
   <script type="module" src="firebase.js"></script>
   <script src="app.js"></script>
 </body>
