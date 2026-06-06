@@ -1594,6 +1594,8 @@ function startQuiz(lessonId) {
   renderQuizQuestion();
 }
 
+const LETTERS = ['A', 'B', 'C', 'D'];
+
 function renderQuizQuestion() {
   const q = QUIZ_STATE.questions[QUIZ_STATE.index];
   const total = QUIZ_STATE.questions.length;
@@ -1601,10 +1603,13 @@ function renderQuizQuestion() {
     '<span class="qdot ' + (i < QUIZ_STATE.index ? 'done' : i === QUIZ_STATE.index ? 'current' : '') + '"></span>'
   ).join('');
   document.getElementById('quiz-body').innerHTML =
-    '<div class="quiz-q">Q' + (QUIZ_STATE.index + 1) + '/' + total + ': ' + q.q + '</div>' +
-    '<div class="quiz-choices">' +
+    '<div class="quiz-question">Q' + (QUIZ_STATE.index + 1) + '/' + total + ': ' + q.q + '</div>' +
+    '<div class="quiz-options">' +
       q.choices.map((c, i) =>
-        '<button class="quiz-choice" onclick="answerQuiz(' + i + ')">' + c + '</button>'
+        '<button class="quiz-opt" onclick="answerQuiz(' + i + ')">' +
+          '<span class="opt-letter">' + LETTERS[i] + '</span>' +
+          c +
+        '</button>'
       ).join('') +
     '</div>';
 }
@@ -1613,7 +1618,7 @@ function answerQuiz(choiceIdx) {
   const q = QUIZ_STATE.questions[QUIZ_STATE.index];
   const correct = choiceIdx === q.answer;
   if (correct) { QUIZ_STATE.correct++; addXP(25); }
-  document.querySelectorAll('.quiz-choice').forEach((btn, i) => {
+  document.querySelectorAll('.quiz-opt').forEach((btn, i) => {
     btn.disabled = true;
     if (i === q.answer) btn.classList.add('correct');
     else if (i === choiceIdx) btn.classList.add('wrong');
@@ -1622,7 +1627,7 @@ function answerQuiz(choiceIdx) {
     QUIZ_STATE.index++;
     if (QUIZ_STATE.index < QUIZ_STATE.questions.length) renderQuizQuestion();
     else showQuizResult();
-  }, 700);
+  }, 800);
 }
 
 function showQuizResult() {

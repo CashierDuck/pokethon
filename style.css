@@ -966,6 +966,9 @@ code {
 .quiz-result { text-align: center; padding: 0.5rem 0 0.25rem; }
 .qr-score { font-size: 2.5rem; font-weight: 800; color: var(--text); margin-bottom: 0.25rem; }
 .qr-label { color: var(--text-muted); margin-bottom: 1.25rem; font-size: 0.88rem; }
+.qr-verdict { font-size: 1rem; font-weight: 700; margin: 0.5rem 0 1rem; }
+.qr-verdict.pass { color: #4ade80; }
+.qr-verdict.fail { color: #f87171; }
 .qr-xp {
   background: var(--surface-2);
   border: 1px solid var(--border-2);
