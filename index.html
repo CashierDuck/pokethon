@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokéthon Bootcamp — Learn Python with Pokémon</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══ HEADER ═══ -->
+  <header id="site-header">
+    <div class="header-inner">
+      <div class="logo" onclick="goHome()">
+        <div class="logo-ball"><div class="lb-top"></div><div class="lb-mid"><div class="lb-btn"></div></div><div class="lb-bot"></div></div>
+        <span>Poké<strong>thon</strong></span>
+      </div>
+      <div class="header-center" id="header-progress-wrap" style="display:none">
+        <div class="header-xp-bar">
+          <div class="header-xp-fill" id="header-xp-fill"></div>
+        </div>
+        <span class="header-xp-label" id="header-xp-label">0 XP</span>
+      </div>
+      <div class="header-right">
+        <button class="trainer-btn" id="trainer-btn" onclick="openTrainer()">🎮 Trainer Card</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ HOME / SPLASH ═══ -->
+  <div id="screen-home" class="screen active">
+    <div class="splash">
+      <div class="splash-pokeball">
+        <div class="sp-top"></div>
+        <div class="sp-mid"><div class="sp-btn"></div></div>
+        <div class="sp-bot"></div>
+      </div>
+      <h1>Pokéthon <span class="accent">Bootcamp</span></h1>
+      <p class="splash-sub">An interactive Python training journey — taught entirely with Pokémon.</p>
+      <div class="splash-badges">
+        <span class="sbadge">⚡ 10 Lessons</span>
+        <span class="sbadge">🧩 Quizzes</span>
+        <span class="sbadge">💻 Live Code</span>
+        <span class="sbadge">⚔️ LeetCode</span>
+        <span class="sbadge">🏆 XP + Badges</span>
+      </div>
+      <div class="splash-name-wrap">
+        <label>Enter your trainer name:</label>
+        <input id="trainer-name-input" type="text" placeholder="Ash Ketchum" maxlength="20" />
+        <button class="cta-btn" onclick="startBootcamp()">Begin Training →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BOOTCAMP MAIN ═══ -->
+  <div id="screen-bootcamp" class="screen">
+    <div class="bootcamp-layout">
+
+      <!-- LEFT SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-track">
+          <div class="track-label">PYTHON TRACK</div>
+          <div id="lesson-list" class="lesson-list"></div>
+        </div>
+        <div class="sidebar-track">
+          <div class="track-label">LEETCODE TRACK</div>
+          <div id="lc-list" class="lesson-list"></div>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT AREA -->
+      <main class="main-content" id="main-content">
+        <!-- dynamically rendered -->
+      </main>
+
+    </div>
+  </div>
+
+  <!-- ═══ QUIZ MODAL ═══ -->
+  <div id="quiz-overlay" class="overlay hidden">
+    <div class="quiz-modal">
+      <div class="quiz-header">
+        <div class="quiz-title-row">
+          <span class="quiz-icon">🧩</span>
+          <h3 id="quiz-title">Quiz Time!</h3>
+        </div>
+        <div class="quiz-progress-dots" id="quiz-dots"></div>
+      </div>
+      <div id="quiz-body" class="quiz-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══ TRAINER CARD MODAL ═══ -->
+  <div id="trainer-overlay" class="overlay hidden">
+    <div class="trainer-card">
+      <button class="close-btn" onclick="closeTrainer()">✕</button>
+      <div class="tc-header">
+        <div class="tc-avatar" id="tc-avatar">🧢</div>
+        <div class="tc-info">
+          <div class="tc-name" id="tc-name">Trainer</div>
+          <div class="tc-title" id="tc-title">Pokéthon Rookie</div>
+        </div>
+      </div>
+      <div class="tc-stats">
+        <div class="tc-stat"><span class="tc-stat-val" id="tc-xp">0</span><span class="tc-stat-lbl">XP</span></div>
+        <div class="tc-stat"><span class="tc-stat-val" id="tc-lessons">0</span><span class="tc-stat-lbl">Lessons</span></div>
+        <div class="tc-stat"><span class="tc-stat-val" id="tc-streak">0</span><span class="tc-stat-lbl">Streak</span></div>
+      </div>
+      <div class="tc-badges-label">BADGES EARNED</div>
+      <div class="tc-badges" id="tc-badges"></div>
+    </div>
+  </div>
+
+  <!-- ═══ XP TOAST ═══ -->
+  <div id="xp-toast" class="xp-toast hidden"></div>
+
+  <!-- ═══ LEVEL UP BANNER ═══ -->
+  <div id="levelup-banner" class="levelup-banner hidden">
+    <div class="lu-inner">
+      <div class="lu-icon">🌟</div>
+      <div class="lu-text">
+        <strong id="lu-title">Lesson Complete!</strong>
+        <span id="lu-sub"></span>
+      </div>
+      <button class="lu-next" id="lu-next-btn">Next Lesson →</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
