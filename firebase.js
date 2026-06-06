@@ -21,10 +21,28 @@ const firebaseConfig = {
 
 const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
 
-let db       = null;
-let uid      = null;
-let authRef  = null;
-let isGoogle = false;
+let db         = null;
+let uid        = null;
+let authRef    = null;
+let isGoogle   = false;
+let googleBtnHTML = '';
+
+// Wire sign-in button click from the module (avoids inline onclick timing issues)
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('google-signin-btn');
+  if (btn) {
+    googleBtnHTML = btn.innerHTML;
+    btn.addEventListener('click', () => {
+      if (window.signInWithGoogle) window.signInWithGoogle();
+    });
+  }
+  const chip = document.getElementById('user-chip');
+  if (chip) chip.addEventListener('click', () => {
+    if (authRef && authRef.currentUser && !authRef.currentUser.isAnonymous) {
+      openAccountModal(authRef.currentUser);
+    }
+  });
+});
 
 // ── UI helpers ───────────────────────────────────────────────
 function setSyncStatus(icon, label, title) {
@@ -77,32 +95,29 @@ window.signOutGoogle = async function() {
 };
 
 // ── Google sign-in / link ────────────────────────────────────
-window.signInWithGoogle = async function() {
+async function doGoogleSignIn() {
   if (!authRef) return;
   const provider = new GoogleAuthProvider();
+  const btn = document.getElementById('google-signin-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
   try {
-    let result;
     const current = authRef.currentUser;
     if (current && current.isAnonymous) {
-      // Upgrade anonymous → Google, preserving the same uid
-      result = await linkWithPopup(current, provider);
+      await linkWithPopup(current, provider);
     } else {
-      result = await signInWithPopup(authRef, provider);
+      await signInWithPopup(authRef, provider);
     }
-    // After link/sign-in, onAuthStateChanged fires and reloads data
   } catch(e) {
     if (e.code === 'auth/credential-already-in-use') {
-      // Google account already exists — sign in directly (data will load from that account)
-      try {
-        await signInWithPopup(authRef, provider);
-      } catch(e2) {
-        console.warn('Google sign-in failed:', e2.message);
-      }
+      try { await signInWithPopup(authRef, provider); } catch(e2) {}
     } else {
       console.warn('Google sign-in failed:', e.message);
     }
+    if (btn) { btn.disabled = false; btn.innerHTML = googleBtnHTML; }
   }
-};
+}
+
+window.signInWithGoogle = doGoogleSignIn;
 
 // ── Core auth + Firestore ────────────────────────────────────
 if (CONFIGURED) {

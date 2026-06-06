@@ -192,18 +192,19 @@ header {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  background: white;
-  color: #3c4043;
-  border: 1px solid #dadce0;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border-2);
   border-radius: 20px;
   padding: 0.28rem 0.85rem;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: box-shadow 0.15s, background 0.15s;
+  transition: border-color 0.15s, color 0.15s;
   white-space: nowrap;
+  font-family: inherit;
 }
-.google-btn:hover { box-shadow: 0 1px 6px rgba(0,0,0,0.25); background: #f8f9fa; }
+.google-btn:hover { border-color: #4285F4; color: var(--text); }
 
 /* User chip (shown when signed in) */
 .user-chip {
