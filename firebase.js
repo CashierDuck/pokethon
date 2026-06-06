@@ -1,16 +1,15 @@
 // ============================================================
-//  firebase.js — Pokéthon cloud save
-//  PASTE YOUR FIREBASE CONFIG OBJECT BELOW (step 3 of setup)
+//  firebase.js — Pokéthon cloud save + Google Sign-In
 // ============================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getAuth, signInAnonymously, signInWithPopup,
+  GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── PASTE YOUR CONFIG HERE ──────────────────────────────────
-//  Firebase Console → Project Settings → Your Apps → SDK snippet
 const firebaseConfig = {
   apiKey:            "AIzaSyBfClztcNrO22kwylCTq10joPo5LG7iU4M",
   authDomain:        "pokethon-acc32.firebaseapp.com",
@@ -19,45 +18,129 @@ const firebaseConfig = {
   messagingSenderId: "313852573856",
   appId:             "1:313852573856:web:3b6fbc6802caea57ffb1c5",
 };
-// ────────────────────────────────────────────────────────────
 
 const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
 
-let db   = null;
-let uid  = null;
+let db       = null;
+let uid      = null;
+let authRef  = null;
+let isGoogle = false;
 
+// ── UI helpers ───────────────────────────────────────────────
 function setSyncStatus(icon, label, title) {
   const el = document.getElementById('sync-status');
-  if (el) { el.textContent = icon + ' ' + label; el.title = title; }
+  if (el) { el.textContent = icon + ' ' + label; el.title = title || label; }
 }
 
+function setUserChip(user) {
+  const el = document.getElementById('user-chip');
+  if (!el) return;
+  if (user && user.displayName) {
+    const photo = user.photoURL
+      ? '<img src="' + user.photoURL + '" alt="" />'
+      : '<span class="uc-initial">' + user.displayName[0].toUpperCase() + '</span>';
+    el.innerHTML = photo + '<span class="uc-name">' + user.displayName.split(' ')[0] + '</span>';
+    el.style.display = 'flex';
+    el.title = 'Signed in as ' + user.displayName + ' · click to sign out';
+    el.onclick = () => openAccountModal(user);
+  } else {
+    el.style.display = 'none';
+    el.onclick = null;
+  }
+}
+
+// ── Account modal ────────────────────────────────────────────
+function openAccountModal(user) {
+  let modal = document.getElementById('account-modal');
+  if (!modal) return;
+  document.getElementById('am-name').textContent  = user.displayName || 'Trainer';
+  document.getElementById('am-email').textContent = user.email || '';
+  document.getElementById('am-photo').src = user.photoURL || '';
+  document.getElementById('am-photo').style.display = user.photoURL ? '' : 'none';
+  modal.classList.remove('hidden');
+}
+
+window.closeAccountModal = function() {
+  const m = document.getElementById('account-modal');
+  if (m) m.classList.add('hidden');
+};
+
+window.signOutGoogle = async function() {
+  if (!authRef) return;
+  window.closeAccountModal();
+  await signOut(authRef);
+  isGoogle = false;
+  setUserChip(null);
+  setSyncStatus('☁️', 'Synced', 'Signed out — anonymous save active');
+  // Sign back in anonymously so saves still work
+  signInAnonymously(authRef).catch(() => {});
+};
+
+// ── Google sign-in / link ────────────────────────────────────
+window.signInWithGoogle = async function() {
+  if (!authRef) return;
+  const provider = new GoogleAuthProvider();
+  try {
+    let result;
+    const current = authRef.currentUser;
+    if (current && current.isAnonymous) {
+      // Upgrade anonymous → Google, preserving the same uid
+      result = await linkWithPopup(current, provider);
+    } else {
+      result = await signInWithPopup(authRef, provider);
+    }
+    // After link/sign-in, onAuthStateChanged fires and reloads data
+  } catch(e) {
+    if (e.code === 'auth/credential-already-in-use') {
+      // Google account already exists — sign in directly (data will load from that account)
+      try {
+        await signInWithPopup(authRef, provider);
+      } catch(e2) {
+        console.warn('Google sign-in failed:', e2.message);
+      }
+    } else {
+      console.warn('Google sign-in failed:', e.message);
+    }
+  }
+};
+
+// ── Core auth + Firestore ────────────────────────────────────
 if (CONFIGURED) {
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  authRef   = getAuth(app);
+  db        = getFirestore(app);
 
   setSyncStatus('🔄', 'Connecting…', 'Connecting to cloud save');
 
-  signInAnonymously(auth).catch(err => {
-    console.warn('Firebase sign-in failed:', err.message);
-    setSyncStatus('⚠️', 'Local only', 'Cloud save unavailable — progress saved locally');
+  signInAnonymously(authRef).catch(err => {
+    console.warn('Anonymous sign-in failed:', err.message);
+    setSyncStatus('⚠️', 'Local only', 'Cloud save unavailable');
   });
 
-  onAuthStateChanged(auth, async user => {
+  onAuthStateChanged(authRef, async user => {
     if (!user) return;
-    uid = user.uid;
-    setSyncStatus('☁️', 'Saved', 'Progress saved to cloud');
+    uid      = user.uid;
+    isGoogle = !user.isAnonymous;
 
-    // load cloud save on sign-in
+    if (isGoogle) {
+      setUserChip(user);
+      setSyncStatus('✅', 'Google', 'Signed in as ' + (user.displayName || user.email));
+    } else {
+      setUserChip(null);
+      setSyncStatus('☁️', 'Synced', 'Progress saved to cloud (anonymous)');
+    }
+
+    // Show / hide Google sign-in button in header
+    const btn = document.getElementById('google-signin-btn');
+    if (btn) btn.style.display = isGoogle ? 'none' : '';
+
+    // Load cloud save
     try {
       const snap = await getDoc(doc(db, 'saves', uid));
       if (snap.exists()) {
         const cloud = snap.data();
-        // only load if cloud is newer (more XP or more lessons)
         const localLessons = (JSON.parse(localStorage.getItem('pokethon_state') || '{}')).completedLessons || [];
         if ((cloud.completedLessons?.length ?? 0) > localLessons.length || (cloud.xp ?? 0) > 0) {
-          window.__cloudSave = cloud;
-          // notify app.js to merge
           window.dispatchEvent(new CustomEvent('pokethon-cloud-loaded', { detail: cloud }));
         }
       }
@@ -66,17 +149,19 @@ if (CONFIGURED) {
     }
   });
 } else {
-  setSyncStatus('', '');
-  console.info('Firebase not configured — using localStorage only. See firebase.js to set up cloud saves.');
+  setSyncStatus('', '', '');
 }
 
-// Called by app.js whenever state changes
+// Called by app.js on every state change
 window.cloudSave = async function(stateObj) {
   if (!db || !uid) return;
   try {
     await setDoc(doc(db, 'saves', uid), stateObj, { merge: true });
     setSyncStatus('✅', 'Saved', 'Progress saved to cloud');
-    setTimeout(() => setSyncStatus('☁️', 'Synced', 'Cloud save connected'), 2000);
+    setTimeout(() => {
+      setSyncStatus(isGoogle ? '✅' : '☁️', isGoogle ? 'Google' : 'Synced',
+        isGoogle ? 'Signed in with Google' : 'Cloud save connected');
+    }, 2000);
   } catch(e) {
     console.warn('Cloud save failed:', e.message);
     setSyncStatus('⚠️', 'Save failed', 'Check your connection');
