@@ -83,29 +83,50 @@ header {
 }
 
 .logo-ball {
-  width: 24px;
-  height: 24px;
+  position: relative;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  border: 2px solid var(--border-2);
+  border: 2px solid #555;
   overflow: hidden;
   flex-shrink: 0;
+  background: white;
+  display: flex;
+  flex-direction: column;
 }
-.lb-top { background: var(--red); height: 44%; }
+/* top half — red */
+.lb-top {
+  flex: 1;
+  background: var(--red);
+}
+/* middle band */
 .lb-mid {
-  background: var(--border-2);
-  height: 12%;
+  height: 4px;
+  background: #444;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;
 }
+/* centre button — sits on top of the band */
 .lb-btn {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--surface);
-  border: 1.5px solid var(--border-2);
+  background: #e8e8e8;
+  border: 2px solid #444;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
-.lb-bot { background: var(--surface-2); height: 44%; }
+/* bottom half — white */
+.lb-bot {
+  flex: 1;
+  background: #e8e8e8;
+}
 
 .logo span {
   font-size: 1.05rem;
@@ -186,29 +207,35 @@ header {
 }
 
 .splash-pokeball {
+  position: relative;
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 4px solid var(--border-2);
+  border: 4px solid #444;
   overflow: hidden;
   margin-bottom: 2rem;
-}
-.sp-top { background: var(--red); height: 44%; }
-.sp-mid {
-  background: var(--border-2);
-  height: 12%;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+}
+.sp-top { flex: 1; background: var(--red); }
+.sp-mid {
+  height: 6px;
+  background: #444;
+  flex-shrink: 0;
 }
 .sp-btn {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--surface);
-  border: 3px solid var(--border-2);
+  background: #e8e8e8;
+  border: 4px solid #444;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
-.sp-bot { background: var(--surface-2); height: 44%; }
+.sp-bot { flex: 1; background: #e8e8e8; }
 
 .splash h1 {
   font-size: 2.5rem;
