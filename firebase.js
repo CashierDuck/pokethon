@@ -4,8 +4,8 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getAuth, signInAnonymously, signInWithRedirect, getRedirectResult,
-  GoogleAuthProvider, linkWithRedirect, onAuthStateChanged, signOut
+  getAuth, signInAnonymously, signInWithPopup,
+  GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -19,34 +19,43 @@ const firebaseConfig = {
   appId:             "1:313852573856:web:3b6fbc6802caea57ffb1c5",
 };
 
-let db       = null;
+const app    = initializeApp(firebaseConfig);
+const auth   = getAuth(app);
+const db     = getFirestore(app);
+
 let uid      = null;
-let authRef  = null;
 let isGoogle = false;
 
-// ── UI helpers ───────────────────────────────────────────────
+// ── UI ───────────────────────────────────────────────────────
 function setSyncStatus(icon, label, title) {
   const el = document.getElementById('sync-status');
   if (el) { el.textContent = icon + ' ' + label; el.title = title || label; }
 }
 
-function setGoogleBtn(visible) {
+function showSignedIn(user) {
+  // Hide sign-in button
   const btn = document.getElementById('google-signin-btn');
-  if (btn) btn.style.display = visible ? '' : 'none';
+  if (btn) btn.style.display = 'none';
+
+  // Show chip with photo + name
+  const chip = document.getElementById('user-chip');
+  if (!chip) return;
+  const photo = user.photoURL
+    ? '<img src="' + user.photoURL + '" alt="" />'
+    : '<span class="uc-initial">' + (user.displayName || 'G')[0].toUpperCase() + '</span>';
+  chip.innerHTML = photo + '<span class="uc-name">' + (user.displayName || 'You').split(' ')[0] + '</span>';
+  chip.style.display = 'flex';
+  chip.onclick = () => openAccountModal(user);
+
+  setSyncStatus('✅', 'Google', 'Signed in as ' + (user.displayName || user.email));
 }
 
-function setUserChip(user) {
-  const el = document.getElementById('user-chip');
-  if (!el) return;
-  if (user && user.displayName) {
-    const photo = user.photoURL
-      ? '<img src="' + user.photoURL + '" alt="" />'
-      : '<span class="uc-initial">' + user.displayName[0].toUpperCase() + '</span>';
-    el.innerHTML = photo + '<span class="uc-name">' + user.displayName.split(' ')[0] + '</span>';
-    el.style.display = 'flex';
-  } else {
-    el.style.display = 'none';
-  }
+function showSignedOut() {
+  const btn = document.getElementById('google-signin-btn');
+  if (btn) btn.style.display = '';
+  const chip = document.getElementById('user-chip');
+  if (chip) { chip.style.display = 'none'; chip.onclick = null; }
+  setSyncStatus('☁️', 'Synced', 'Saving anonymously');
 }
 
 function openAccountModal(user) {
@@ -66,82 +75,59 @@ window.closeAccountModal = function() {
 };
 
 window.signOutGoogle = async function() {
-  if (!authRef) return;
   window.closeAccountModal();
-  await signOut(authRef);
-  isGoogle = false;
-  setUserChip(null);
-  setGoogleBtn(true);
-  setSyncStatus('☁️', 'Synced', 'Signed out — saves continue locally');
-  signInAnonymously(authRef).catch(() => {});
+  await signOut(auth);
+  signInAnonymously(auth).catch(() => {});
 };
 
-// ── Google sign-in (redirect — no popup blocker issues) ──────
-window.signInWithGoogle = async function() {
-  if (!authRef) { alert('Still connecting — please wait a moment and try again.'); return; }
-  const provider = new GoogleAuthProvider();
+// ── Google sign-in ───────────────────────────────────────────
+async function doGoogleSignIn() {
   const btn = document.getElementById('google-signin-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span style="opacity:.6">Redirecting…</span>';
-  }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.5;font-size:.8rem">Opening…</span>'; }
+
+  const provider = new GoogleAuthProvider();
   try {
-    const current = authRef.currentUser;
+    const current = auth.currentUser;
     if (current && current.isAnonymous) {
-      await linkWithRedirect(current, provider);
+      await linkWithPopup(current, provider);
     } else {
-      await signInWithRedirect(authRef, provider);
+      await signInWithPopup(auth, provider);
     }
-    // Page will redirect to Google, then back — getRedirectResult() handles the return
+    // onAuthStateChanged fires next and updates the UI
   } catch(e) {
-    console.warn('Sign-in redirect failed:', e.code, e.message);
-    setSyncStatus('⚠️', 'Sign-in failed', e.message);
-    if (btn) { btn.disabled = false; btn.textContent = 'Sign in with Google'; }
+    console.warn('Sign-in error:', e.code, e.message);
+
+    // Credential already used by another account — just sign in to that account
+    if (e.code === 'auth/credential-already-in-use') {
+      try { await signInWithPopup(auth, provider); } catch(_) {}
+    } else {
+      // Restore button on any other error (including popup closed by user)
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = googleBtnContent;
+      }
+      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+        setSyncStatus('⚠️', 'Sign-in failed', e.message);
+      }
+    }
   }
-};
+}
 
-// ── Core init ────────────────────────────────────────────────
-const app = initializeApp(firebaseConfig);
-authRef   = getAuth(app);
-db        = getFirestore(app);
-
+// ── Boot ─────────────────────────────────────────────────────
 setSyncStatus('🔄', 'Connecting…', 'Connecting to cloud');
 
-// Handle return from Google redirect
-getRedirectResult(authRef).then(result => {
-  if (result && result.user) {
-    // Successfully signed in via redirect — onAuthStateChanged will handle the rest
-    console.log('Redirect sign-in complete:', result.user.displayName);
-  }
-}).catch(e => {
-  if (e.code !== 'auth/no-current-user') {
-    console.warn('Redirect result error:', e.code, e.message);
-    setSyncStatus('⚠️', 'Sign-in failed', e.message);
-  }
+signInAnonymously(auth).catch(err => {
+  console.warn('Anonymous auth failed:', err.message);
+  setSyncStatus('⚠️', 'Local only', 'Cloud unavailable');
 });
 
-signInAnonymously(authRef).catch(err => {
-  console.warn('Anonymous sign-in failed:', err.message);
-  setSyncStatus('⚠️', 'Local only', 'Cloud save unavailable');
-});
-
-onAuthStateChanged(authRef, async user => {
-  if (!user) return;
+onAuthStateChanged(auth, async user => {
+  if (!user) { showSignedOut(); return; }
   uid      = user.uid;
   isGoogle = !user.isAnonymous;
 
-  if (isGoogle) {
-    setUserChip(user);
-    setGoogleBtn(false);
-    setSyncStatus('✅', 'Google', 'Signed in as ' + (user.displayName || user.email));
-    // Wire chip click
-    const chip = document.getElementById('user-chip');
-    if (chip) chip.onclick = () => openAccountModal(user);
-  } else {
-    setUserChip(null);
-    setGoogleBtn(true);
-    setSyncStatus('☁️', 'Synced', 'Saves to cloud anonymously');
-  }
+  if (isGoogle) showSignedIn(user);
+  else showSignedOut();
 
   // Load cloud save
   try {
@@ -149,39 +135,34 @@ onAuthStateChanged(authRef, async user => {
     if (snap.exists()) {
       const cloud = snap.data();
       const local = JSON.parse(localStorage.getItem('pokethon_state') || '{}');
+      const cloudLen = cloud.completedLessons?.length ?? 0;
       const localLen = (local.completedLessons || []).length;
-      if ((cloud.completedLessons?.length ?? 0) > localLen || (cloud.xp ?? 0) > (local.xp ?? 0)) {
+      if (cloudLen > localLen || (cloud.xp ?? 0) > (local.xp ?? 0)) {
         window.dispatchEvent(new CustomEvent('pokethon-cloud-loaded', { detail: cloud }));
       }
     }
   } catch(e) {
-    console.warn('Could not load cloud save:', e.message);
+    console.warn('Cloud load failed:', e.message);
   }
 });
 
-// Wire button — runs after module parses, which is after DOM is ready (modules are deferred)
-const _btn = document.getElementById('google-signin-btn');
-if (_btn) _btn.addEventListener('click', window.signInWithGoogle);
-const _chip = document.getElementById('user-chip');
-if (_chip) _chip.addEventListener('click', () => {
-  if (authRef && authRef.currentUser && !authRef.currentUser.isAnonymous) {
-    openAccountModal(authRef.currentUser);
-  }
-});
+// Attach button — ES modules are deferred so DOM is ready here
+const googleBtnContent = document.getElementById('google-signin-btn')?.innerHTML || '';
+document.getElementById('google-signin-btn')?.addEventListener('click', doGoogleSignIn);
 
-// Called by app.js on every state change
+// ── Save ─────────────────────────────────────────────────────
 window.cloudSave = async function(stateObj) {
-  if (!db || !uid) return;
+  if (!uid) return;
   try {
     await setDoc(doc(db, 'saves', uid), stateObj, { merge: true });
     setSyncStatus('✅', 'Saved', 'Progress saved to cloud');
     setTimeout(() => setSyncStatus(
       isGoogle ? '✅' : '☁️',
       isGoogle ? 'Google' : 'Synced',
-      isGoogle ? 'Signed in with Google' : 'Cloud save connected'
+      isGoogle ? 'Signed in with Google' : 'Cloud save active'
     ), 2000);
   } catch(e) {
-    console.warn('Cloud save failed:', e.message);
-    setSyncStatus('⚠️', 'Save failed', 'Check your connection');
+    console.warn('Save failed:', e.message);
+    setSyncStatus('⚠️', 'Save failed', 'Check connection');
   }
 };

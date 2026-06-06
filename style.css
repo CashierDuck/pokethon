@@ -170,6 +170,14 @@ header {
 }
 
 /* Header right */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .sync-status {
   font-size: 0.72rem;
   font-weight: 500;
