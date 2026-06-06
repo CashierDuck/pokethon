@@ -411,6 +411,59 @@ header {
   max-width: 580px;
 }
 
+/* ── Lesson hero row ── */
+.lesson-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lesson-hero-text { flex: 1; min-width: 0; }
+.lesson-hero-text .lesson-topbar { margin-bottom: 0.75rem; }
+.lesson-hero-text .lesson-title  { margin-bottom: 0.35rem; }
+.lesson-hero-text .lesson-subtitle { margin-bottom: 0.5rem; }
+
+.lesson-hero-sprite {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  transition: transform 0.3s ease;
+}
+.lesson-hero-sprite:hover { transform: translateY(-4px); }
+
+.lesson-pokemon-tag {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 0.25rem;
+}
+.lesson-pokemon-tag strong { color: var(--text-muted); }
+
+/* Quiz result sprite */
+.qr-sprite {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 0.5rem;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  animation: spriteIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes spriteIn {
+  from { opacity: 0; transform: scale(0.6) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Poke sprite generic */
+.poke-sprite {
+  image-rendering: auto;
+}
+
 /* Concept blocks */
 .concept-block { margin-bottom: 2rem; }
 

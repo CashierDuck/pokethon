@@ -47,6 +47,43 @@ window.addEventListener('pokethon-cloud-loaded', e => {
   }
 });
 
+// ── POKEMON SPRITES ──────────────────────────────────────────
+// PokeAPI official sprites (open source, no key needed)
+const SPRITE = id =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+
+const LESSON_POKEMON = {
+  variables:      { id: 25,  name: 'Pikachu'    },
+  types:          { id: 133, name: 'Eevee'       },
+  lists:          { id: 52,  name: 'Meowth'      },
+  dicts:          { id: 137, name: 'Porygon'     },
+  conditionals:   { id: 6,   name: 'Charizard'   },
+  loops:          { id: 143, name: 'Snorlax'     },
+  functions:      { id: 150, name: 'Mewtwo'      },
+  classes:        { id: 149, name: 'Dragonite'   },
+  exceptions:     { id: 94,  name: 'Gengar'      },
+  comprehensions: { id: 196, name: 'Espeon'      },
+  lc_twosum:      { id: 81,  name: 'Magnemite'   },
+  lc_valid_parens:{ id: 100, name: 'Voltorb'     },
+  lc_longest_sub: { id: 235, name: 'Smeargle'    },
+  lc_maxsub:      { id: 59,  name: 'Arcanine'    },
+  lc_stairs:      { id: 245, name: 'Suicune'     },
+  lc_binsearch:   { id: 249, name: 'Lugia'       },
+};
+
+function pokemonImg(lessonId, size = 96, cls = '') {
+  const p = LESSON_POKEMON[lessonId];
+  if (!p) return '';
+  return `<img
+    src="${SPRITE(p.id)}"
+    alt="${p.name}"
+    width="${size}" height="${size}"
+    class="poke-sprite ${cls}"
+    loading="lazy"
+    onerror="this.style.display='none'"
+  />`;
+}
+
 // ── CURRICULUM ───────────────────────────────────────────────
 const CURRICULUM = [
   { id:'variables',      icon:'📦', label:'Variables',       track:'python' },
@@ -225,10 +262,21 @@ function openTrainer() {
   document.getElementById('tc-xp').textContent      = STATE.xp;
   document.getElementById('tc-lessons').textContent = STATE.completedLessons.size;
   document.getElementById('tc-streak').textContent  = STATE.streak;
+
+  // show the sprite of the most recently completed lesson
+  const lastId = [...STATE.completedLessons].slice(-1)[0] || STATE.currentLesson;
+  const p = LESSON_POKEMON[lastId];
+  const avatar = document.getElementById('tc-avatar');
+  if (p) {
+    avatar.innerHTML = `<img src="${SPRITE(p.id)}" alt="${p.name}" width="40" height="40" style="image-rendering:auto" onerror="this.replaceWith('🧢')">`;
+  } else {
+    avatar.textContent = '🧢';
+  }
+
   const badges = earnedBadges();
   document.getElementById('tc-badges').innerHTML = badges.length
     ? badges.map(b => `<span class="tc-badge-item">${b.label}</span>`).join('')
-    : '<span style="color:var(--muted);font-size:0.85rem">Complete lessons to earn badges!</span>';
+    : '<span style="color:var(--text-dim);font-size:0.82rem">Complete lessons to earn badges!</span>';
   document.getElementById('trainer-overlay').classList.remove('hidden');
 }
 function closeTrainer() {
@@ -249,7 +297,15 @@ function showCompleteBanner(id) {
   const idx  = CURRICULUM.findIndex(c => c.id === id);
   const next = CURRICULUM[idx + 1];
   const banner = document.getElementById('levelup-banner');
-  document.getElementById('lu-title').textContent = '🎉 Lesson Complete!';
+
+  // swap in the current lesson's pokemon sprite
+  const luIcon = banner.querySelector('.lu-icon');
+  const p = LESSON_POKEMON[id];
+  luIcon.innerHTML = p
+    ? `<img src="${SPRITE(p.id)}" alt="${p.name}" width="48" height="48" style="image-rendering:auto" onerror="this.replaceWith('🎉')">`
+    : '🎉';
+
+  document.getElementById('lu-title').textContent = 'Lesson Complete!';
   document.getElementById('lu-sub').textContent   = next ? `Next up: ${next.label}` : 'You finished the track!';
   const btn = document.getElementById('lu-next-btn');
   if (next) {
@@ -336,14 +392,21 @@ function nextQuizQuestion() {
 
 function showQuizResult() {
   const { score, questions, lessonId } = quizState;
-  const total  = questions.length;
+  const total    = questions.length;
   const xpEarned = score * XP_PER_QUIZ_CORRECT;
+  const p        = LESSON_POKEMON[lessonId];
   STATE.quizScores[lessonId] = score;
+
+  const resultLabel = score === total ? 'Perfect score!' : score >= total / 2 ? 'Good work!' : 'Keep practicing!';
+  const spriteHtml  = p
+    ? `<img src="${SPRITE(p.id)}" alt="${p.name}" class="qr-sprite" onerror="this.style.display='none'">`
+    : '';
 
   document.getElementById('quiz-body').innerHTML = `
     <div class="quiz-result">
+      ${spriteHtml}
       <div class="qr-score">${score}/${total}</div>
-      <div class="qr-label">${score === total ? '🏆 Perfect score!' : score >= total/2 ? '👍 Good work!' : '📚 Keep practicing!'}</div>
+      <div class="qr-label">${resultLabel}</div>
       <div class="qr-xp">+${xpEarned} XP earned</div>
       <button class="qr-close" onclick="closeQuiz('${lessonId}')">Continue Training →</button>
     </div>
@@ -782,17 +845,24 @@ function renderLessonPage(id) {
   const entry = CURRICULUM[idx];
   const done  = STATE.completedLessons.has(id);
   const data  = LESSONS[id];
+  const poke  = LESSON_POKEMON[id];
   if (!data) return '<p style="color:var(--muted)">Lesson not found.</p>';
 
   return `
     <div class="lesson-page">
-      <div class="lesson-topbar">
-        <span class="lesson-badge">${entry.track === 'python' ? 'Python Track' : 'LeetCode Track'}</span>
-        <span class="lesson-num">Lesson ${idx + 1} of ${CURRICULUM.length}</span>
-        ${done ? '<span style="color:var(--green);font-size:0.85rem;font-weight:700">✓ Completed</span>' : ''}
+      <div class="lesson-hero">
+        <div class="lesson-hero-text">
+          <div class="lesson-topbar">
+            <span class="lesson-badge">${entry.track === 'python' ? 'Python Track' : 'LeetCode Track'}</span>
+            <span class="lesson-num">Lesson ${idx + 1} of ${CURRICULUM.length}</span>
+            ${done ? '<span style="color:var(--green);font-size:0.85rem;font-weight:700">✓ Completed</span>' : ''}
+          </div>
+          <h1 class="lesson-title">${data.title}</h1>
+          <p class="lesson-subtitle">${data.subtitle}</p>
+          ${poke ? `<div class="lesson-pokemon-tag">featuring <strong>${poke.name}</strong></div>` : ''}
+        </div>
+        ${pokemonImg(id, 120, 'lesson-hero-sprite')}
       </div>
-      <h1 class="lesson-title">${entry.icon} ${data.title}</h1>
-      <p class="lesson-subtitle">${data.subtitle}</p>
 
       ${data.content}
 
@@ -1478,17 +1548,24 @@ function renderLCPage(id) {
   const entry = CURRICULUM.find(c => c.id === id);
   const done  = STATE.completedLessons.has(id);
   const idx   = CURRICULUM.findIndex(c => c.id === id);
+  const poke  = LESSON_POKEMON[id];
 
   return `
     <div class="lc-detail-page">
-      <div class="lesson-topbar">
-        <span class="lesson-badge">LeetCode Track</span>
-        <span class="diff-badge ${lc.diff.toLowerCase()}">${lc.diff}</span>
-        <span class="lesson-num">#${lc.num}</span>
-        ${done ? '<span style="color:var(--green);font-size:0.85rem;font-weight:700">✓ Completed</span>' : ''}
+      <div class="lesson-hero">
+        <div class="lesson-hero-text">
+          <div class="lesson-topbar">
+            <span class="lesson-badge">LeetCode Track</span>
+            <span class="diff-badge ${lc.diff.toLowerCase()}">${lc.diff}</span>
+            <span class="lesson-num">#${lc.num}</span>
+            ${done ? '<span style="color:var(--green);font-size:0.85rem;font-weight:700">✓ Completed</span>' : ''}
+          </div>
+          <h1 class="lesson-title">${lc.title}</h1>
+          <p class="lesson-subtitle">${lc.pokemon}</p>
+          ${poke ? `<div class="lesson-pokemon-tag">featuring <strong>${poke.name}</strong></div>` : ''}
+        </div>
+        ${pokemonImg(id, 120, 'lesson-hero-sprite')}
       </div>
-      <h1 class="lesson-title">${entry.icon} ${lc.title}</h1>
-      <p class="lesson-subtitle">🎮 ${lc.pokemon}</p>
 
       <div class="concept-block">
         <h4>The Problem</h4>
