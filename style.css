@@ -65,6 +65,8 @@ header{
 .header-xp-fill{height:100%;background:linear-gradient(90deg,var(--yellow),var(--red));border-radius:4px;width:0%;transition:width 0.6s ease}
 .header-xp-label{font-size:0.8rem;font-weight:700;color:var(--yellow);white-space:nowrap}
 
+.sync-status{font-size:0.9rem;cursor:default;opacity:0.8}
+
 .trainer-btn{
   background:transparent;border:2px solid var(--border);
   color:var(--muted);padding:0.35rem 0.85rem;border-radius:20px;

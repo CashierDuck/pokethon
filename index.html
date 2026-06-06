@@ -21,7 +21,8 @@
         </div>
         <span class="header-xp-label" id="header-xp-label">0 XP</span>
       </div>
-      <div class="header-right">
+      <div class="header-right" style="display:flex;align-items:center;gap:0.6rem">
+        <span id="sync-status" class="sync-status" title="Cloud save status"></span>
         <button class="trainer-btn" id="trainer-btn" onclick="openTrainer()">🎮 Trainer Card</button>
       </div>
     </div>
@@ -126,6 +127,8 @@
     </div>
   </div>
 
+  <!-- Firebase SDK -->
+  <script type="module" src="firebase.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,84 @@
+// ============================================================
+//  firebase.js — Pokéthon cloud save
+//  PASTE YOUR FIREBASE CONFIG OBJECT BELOW (step 3 of setup)
+// ============================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── PASTE YOUR CONFIG HERE ──────────────────────────────────
+//  Firebase Console → Project Settings → Your Apps → SDK snippet
+const firebaseConfig = {
+  apiKey:            "PASTE_YOUR_API_KEY",
+  authDomain:        "PASTE_YOUR_AUTH_DOMAIN",
+  projectId:         "PASTE_YOUR_PROJECT_ID",
+  storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",
+  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
+  appId:             "PASTE_YOUR_APP_ID",
+};
+// ────────────────────────────────────────────────────────────
+
+const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE");
+
+let db   = null;
+let uid  = null;
+
+function setSyncStatus(icon, title) {
+  const el = document.getElementById('sync-status');
+  if (el) { el.textContent = icon; el.title = title; }
+}
+
+if (CONFIGURED) {
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  db = getFirestore(app);
+
+  setSyncStatus('🔄', 'Connecting to cloud...');
+
+  signInAnonymously(auth).catch(err => {
+    console.warn('Firebase sign-in failed:', err.message);
+    setSyncStatus('⚠️', 'Cloud save unavailable — progress saved locally');
+  });
+
+  onAuthStateChanged(auth, async user => {
+    if (!user) return;
+    uid = user.uid;
+    setSyncStatus('☁️', 'Cloud save connected');
+
+    // load cloud save on sign-in
+    try {
+      const snap = await getDoc(doc(db, 'saves', uid));
+      if (snap.exists()) {
+        const cloud = snap.data();
+        // only load if cloud is newer (more XP or more lessons)
+        const localLessons = (JSON.parse(localStorage.getItem('pokethon_state') || '{}')).completedLessons || [];
+        if ((cloud.completedLessons?.length ?? 0) > localLessons.length || (cloud.xp ?? 0) > 0) {
+          window.__cloudSave = cloud;
+          // notify app.js to merge
+          window.dispatchEvent(new CustomEvent('pokethon-cloud-loaded', { detail: cloud }));
+        }
+      }
+    } catch(e) {
+      console.warn('Could not load cloud save:', e.message);
+    }
+  });
+} else {
+  setSyncStatus('', '');
+  console.info('Firebase not configured — using localStorage only. See firebase.js to set up cloud saves.');
+}
+
+// Called by app.js whenever state changes
+window.cloudSave = async function(stateObj) {
+  if (!db || !uid) return;
+  try {
+    await setDoc(doc(db, 'saves', uid), stateObj, { merge: true });
+    setSyncStatus('✅', 'Progress saved to cloud');
+    setTimeout(() => setSyncStatus('☁️', 'Cloud save connected'), 2000);
+  } catch(e) {
+    console.warn('Cloud save failed:', e.message);
+    setSyncStatus('⚠️', 'Save failed — check connection');
+  }
+};

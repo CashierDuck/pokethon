@@ -19,17 +19,33 @@ const MAX_XP = 1500;
 function saveState() {
   const s = { ...STATE, completedLessons: [...STATE.completedLessons] };
   localStorage.setItem('pokethon_state', JSON.stringify(s));
+  // cloud save — non-blocking
+  if (typeof window.cloudSave === 'function') window.cloudSave(s);
+}
+function applyState(s) {
+  STATE.trainerName      = s.trainerName || 'Trainer';
+  STATE.xp               = s.xp || 0;
+  STATE.completedLessons = new Set(s.completedLessons || []);
+  STATE.quizScores       = s.quizScores || {};
+  STATE.streak           = s.streak || 0;
 }
 function loadState() {
   const raw = localStorage.getItem('pokethon_state');
   if (!raw) return;
-  const s = JSON.parse(raw);
-  STATE.trainerName = s.trainerName || 'Trainer';
-  STATE.xp = s.xp || 0;
-  STATE.completedLessons = new Set(s.completedLessons || []);
-  STATE.quizScores = s.quizScores || {};
-  STATE.streak = s.streak || 0;
+  applyState(JSON.parse(raw));
 }
+// merge cloud save when Firebase loads it
+window.addEventListener('pokethon-cloud-loaded', e => {
+  const cloud = e.detail;
+  // pick whichever has more progress
+  const localLessons = STATE.completedLessons.size;
+  if ((cloud.completedLessons?.length ?? 0) >= localLessons) {
+    applyState(cloud);
+    localStorage.setItem('pokethon_state', JSON.stringify(cloud));
+    updateXPBar();
+    buildSidebar();
+  }
+});
 
 // ── CURRICULUM ───────────────────────────────────────────────
 const CURRICULUM = [
