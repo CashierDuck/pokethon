@@ -12,12 +12,12 @@ import { getFirestore, doc, setDoc, getDoc }
 // ── PASTE YOUR CONFIG HERE ──────────────────────────────────
 //  Firebase Console → Project Settings → Your Apps → SDK snippet
 const firebaseConfig = {
-  apiKey:            "PASTE_YOUR_API_KEY",
-  authDomain:        "PASTE_YOUR_AUTH_DOMAIN",
-  projectId:         "PASTE_YOUR_PROJECT_ID",
-  storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
-  appId:             "PASTE_YOUR_APP_ID",
+  apiKey:            "AIzaSyBfClztcNrO22kwylCTq10joPo5LG7iU4M",
+  authDomain:        "pokethon-acc32.firebaseapp.com",
+  projectId:         "pokethon-acc32",
+  storageBucket:     "pokethon-acc32.firebasestorage.app",
+  messagingSenderId: "313852573856",
+  appId:             "1:313852573856:web:3b6fbc6802caea57ffb1c5",
 };
 // ────────────────────────────────────────────────────────────
 
