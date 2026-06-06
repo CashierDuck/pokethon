@@ -599,87 +599,155 @@ code {
   overflow: hidden;
 }
 
+/* Wrapper used by lesson inline editor */
+.code-editor-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1.5rem;
+  background: #0d1117;
+}
+
 .editor-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.55rem 0.85rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  padding: 0.55rem 1rem;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  gap: 0.75rem;
+}
+
+/* macOS-style traffic dots */
+.editor-header::before {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: 16px 0 0 #febc2e, 32px 0 0 #28c840;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.editor-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #8b949e;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex: 1;
 }
 
 .editor-title {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #8b949e;
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
-.editor-title span { color: var(--text-dim); font-weight: 400; }
+.editor-title span { color: #484f58; font-weight: 400; }
 
 .editor-actions { display: flex; gap: 0.4rem; }
 
 .run-btn {
-  background: var(--green);
-  color: white;
-  border: none;
-  padding: 0.28rem 0.85rem;
-  border-radius: var(--radius-sm);
+  background: #238636;
+  color: #fff;
+  border: 1px solid rgba(240,246,252,0.1);
+  padding: 0.3rem 0.9rem;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.78rem;
   font-weight: 600;
-  transition: opacity 0.15s;
+  letter-spacing: 0.02em;
+  transition: background 0.15s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
-.run-btn:hover { opacity: 0.88; }
+.run-btn:hover {
+  background: #2ea043;
+  box-shadow: 0 0 0 3px rgba(46,160,67,0.2);
+}
+.run-btn:active { transform: scale(0.97); }
 
 .reset-btn {
   background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  padding: 0.28rem 0.7rem;
-  border-radius: var(--radius-sm);
+  border: 1px solid #30363d;
+  color: #8b949e;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.78rem;
   transition: color 0.15s, border-color 0.15s;
 }
-.reset-btn:hover { color: var(--text-muted); border-color: var(--border-2); }
+.reset-btn:hover { color: #c9d1d9; border-color: #8b949e; }
 
+/* The <textarea> editor */
+.code-editor,
 .editor-textarea {
   width: 100%;
-  min-height: 160px;
-  background: var(--surface-2);
+  min-height: 220px;
+  background: #0d1117;
   border: none;
   outline: none;
-  color: var(--text);
-  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  font-size: 0.85rem;
-  line-height: 1.8;
-  padding: 0.9rem 1.1rem;
+  color: #e6edf3;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.9rem;
+  line-height: 1.75;
+  padding: 1rem 1.25rem;
   resize: vertical;
   tab-size: 4;
+  caret-color: #58a6ff;
+  box-sizing: border-box;
+}
+.code-editor:focus,
+.editor-textarea:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #1f6feb;
 }
 
+/* Output panel */
+.code-output,
 .editor-output {
-  border-top: 1px solid var(--border);
-  min-height: 42px;
-  padding: 0.5rem 1.1rem;
-  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  font-size: 0.82rem;
+  border-top: 1px solid #21262d;
+  min-height: 52px;
+  padding: 0.75rem 1.25rem;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.84rem;
   white-space: pre-wrap;
-  background: var(--surface);
+  background: #010409;
+  color: #e6edf3;
+  line-height: 1.65;
+  position: relative;
 }
-.editor-output.empty { color: var(--text-dim); font-family: inherit; font-style: italic; }
-.editor-output.success { color: #7ee787; }
+.code-output::before,
+.editor-output::before {
+  content: '▶ output';
+  display: block;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #484f58;
+  margin-bottom: 0.4rem;
+}
+.code-output.hidden { display: none; }
+.code-output.error { color: #f85149; }
+.editor-output.empty { color: #484f58; font-style: italic; }
+.editor-output.success { color: #3fb950; }
 .editor-output.error { color: #f85149; }
 .output-prefix {
-  color: var(--text-dim);
-  font-size: 0.65rem;
+  color: #484f58;
+  font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   display: block;
   margin-bottom: 0.25rem;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 /* ── Quiz CTA strip ── */

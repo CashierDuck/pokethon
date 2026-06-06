@@ -1484,8 +1484,10 @@ function openLesson(id) {
       '<div class="lesson-actions">' +
         '<div class="code-editor-wrap">' +
           '<div class="editor-header">' +
-            '<span class="editor-label">Python</span>' +
-            '<button class="run-btn" onclick="runCode(\'' + id + '\')">&#9654; Run</button>' +
+            '<span class="editor-label">&#x1F40D;&nbsp; Python</span>' +
+            '<div style="display:flex;gap:0.5rem">' +
+              '<button class="run-btn" onclick="runCode(\'' + id + '\')">&#9654; Run</button>' +
+            '</div>' +
           '</div>' +
           '<textarea id="code-editor-' + id + '" class="code-editor" spellcheck="false">' + (lesson.starterCode || '') + '</textarea>' +
           '<div id="code-output-' + id + '" class="code-output hidden"></div>' +
@@ -1496,6 +1498,20 @@ function openLesson(id) {
         ) +
       '</div>' +
     '</div>';
+
+  // Tab key inserts 4 spaces instead of switching focus
+  const ta = document.getElementById('code-editor-' + id);
+  if (ta) {
+    ta.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+      }
+    });
+  }
 }
 
 // ── CODE RUNNER ───────────────────────────────────────────────
