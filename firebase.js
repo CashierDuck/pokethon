@@ -5,7 +5,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, signInAnonymously, signInWithPopup,
-  GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signOut
+  GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signOut,
+  browserLocalPersistence, setPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -124,9 +125,15 @@ async function doGoogleSignIn() {
 // ── Boot ─────────────────────────────────────────────────────
 setSyncStatus('🔄', 'Connecting…', 'Connecting to cloud');
 
-signInAnonymously(auth).catch(err => {
-  console.warn('Anonymous auth failed:', err.message);
-  setSyncStatus('⚠️', 'Local only', 'Cloud unavailable');
+// LOCAL persistence = survives page refresh and browser restart
+setPersistence(auth, browserLocalPersistence).then(() => {
+  signInAnonymously(auth).catch(err => {
+    console.warn('Anonymous auth failed:', err.message);
+    setSyncStatus('⚠️', 'Local only', 'Cloud unavailable');
+  });
+}).catch(err => {
+  console.warn('setPersistence failed:', err.message);
+  signInAnonymously(auth).catch(() => {});
 });
 
 onAuthStateChanged(auth, async user => {
