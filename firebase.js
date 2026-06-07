@@ -90,14 +90,19 @@ async function doGoogleSignIn() {
   const provider = new GoogleAuthProvider();
   try {
     const current = auth.currentUser;
+    let result;
     if (current && current.isAnonymous) {
       console.log('[Pokéthon] Linking anonymous → Google');
-      await linkWithPopup(current, provider);
+      result = await linkWithPopup(current, provider);
     } else {
       console.log('[Pokéthon] signInWithPopup');
-      await signInWithPopup(auth, provider);
+      result = await signInWithPopup(auth, provider);
     }
-    console.log('[Pokéthon] Sign-in popup completed');
+    console.log('[Pokéthon] Sign-in popup completed', result.user.displayName);
+    // linkWithPopup doesn't always re-fire onAuthStateChanged — update UI directly
+    uid      = result.user.uid;
+    isGoogle = true;
+    showSignedIn(result.user);
   } catch(e) {
     console.error('[Pokéthon] Sign-in error:', e.code, e.message);
 
