@@ -83,33 +83,36 @@ window.signOutGoogle = async function() {
 // ── Google sign-in ───────────────────────────────────────────
 async function doGoogleSignIn() {
   const btn = document.getElementById('google-signin-btn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.5;font-size:.8rem">Opening…</span>'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6;font-size:.8rem">Opening…</span>'; }
+
+  console.log('[Pokéthon] Starting Google sign-in, auth ready:', !!auth, 'current user:', auth.currentUser?.uid);
 
   const provider = new GoogleAuthProvider();
   try {
     const current = auth.currentUser;
     if (current && current.isAnonymous) {
+      console.log('[Pokéthon] Linking anonymous → Google');
       await linkWithPopup(current, provider);
     } else {
+      console.log('[Pokéthon] signInWithPopup');
       await signInWithPopup(auth, provider);
     }
-    // onAuthStateChanged fires next and updates the UI
+    console.log('[Pokéthon] Sign-in popup completed');
   } catch(e) {
-    console.warn('Sign-in error:', e.code, e.message);
+    console.error('[Pokéthon] Sign-in error:', e.code, e.message);
 
-    // Credential already used by another account — just sign in to that account
     if (e.code === 'auth/credential-already-in-use') {
       try { await signInWithPopup(auth, provider); } catch(_) {}
+    } else if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+      // user closed popup — silent
+    } else if (e.code === 'auth/popup-blocked') {
+      setSyncStatus('⚠️', 'Popup blocked', 'Allow popups for this site in your browser');
+      alert('Popup was blocked. Please allow popups for cashierduck.github.io in your browser settings, then try again.');
     } else {
-      // Restore button on any other error (including popup closed by user)
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = googleBtnContent;
-      }
-      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
-        setSyncStatus('⚠️', 'Sign-in failed', e.message);
-      }
+      setSyncStatus('⚠️', 'Error: ' + e.code, e.message);
     }
+
+    if (btn) { btn.disabled = false; btn.innerHTML = googleBtnContent; }
   }
 }
 
