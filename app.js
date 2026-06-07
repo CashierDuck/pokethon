@@ -1319,6 +1319,11 @@ function showScreen(id) {
 }
 
 function goHome() {
+  // If trainer already has a starter, logo click just returns to bootcamp
+  if (STATE.starter) {
+    startBootcamp();
+    return;
+  }
   showScreen('screen-home');
   document.getElementById('header-progress-wrap').style.display = 'none';
 }
@@ -1328,6 +1333,7 @@ let selectedStarterData = null;
 let activeGen = 1;
 
 function goToStarterPick() {
+  if (STATE.starter) { startBootcamp(); return; }
   const input = document.getElementById('trainer-name-input');
   const name = input.value.trim();
   if (!name) {
