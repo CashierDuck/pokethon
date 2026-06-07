@@ -6,7 +6,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getAuth, signInAnonymously, signInWithPopup,
   GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signOut,
-  browserLocalPersistence, setPersistence
+  browserLocalPersistence, setPersistence, signInWithCredential
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -108,7 +108,14 @@ async function doGoogleSignIn() {
     console.error('[Pokéthon] Sign-in error:', e.code, e.message);
 
     if (e.code === 'auth/credential-already-in-use') {
-      try { await signInWithPopup(auth, provider); } catch(_) {}
+      // Google account already linked to a different UID — sign in with the credential from the error
+      try {
+        const cred = GoogleAuthProvider.credentialFromError(e);
+        const result = await signInWithCredential(auth, cred);
+        uid = result.user.uid;
+        isGoogle = true;
+        showSignedIn(result.user);
+      } catch(e2) { console.error('[Pokéthon] credential-already-in-use fallback failed:', e2.code); }
     } else if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
       // user closed popup — silent
     } else if (e.code === 'auth/popup-blocked') {
