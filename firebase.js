@@ -125,50 +125,59 @@ async function doGoogleSignIn() {
 // ── Boot ─────────────────────────────────────────────────────
 setSyncStatus('🔄', 'Connecting…', 'Connecting to cloud');
 
-// LOCAL persistence — session survives page refresh
-// onAuthStateChanged fires once on load; if no user, sign in anonymously
-setPersistence(auth, browserLocalPersistence).catch(err => {
-  console.warn('setPersistence failed:', err.message);
-});
-
-const unsub = onAuthStateChanged(auth, user => {
-  unsub(); // unsubscribe after first call — the persistent listener below handles the rest
-  if (!user) {
-    signInAnonymously(auth).catch(err => {
-      console.warn('Anonymous auth failed:', err.message);
-      setSyncStatus('⚠️', 'Local only', 'Cloud unavailable');
-    });
-  }
-});
-
-onAuthStateChanged(auth, async user => {
-  if (!user) { showSignedOut(); return; }
-  uid      = user.uid;
-  isGoogle = !user.isAnonymous;
-
-  if (isGoogle) showSignedIn(user);
-  else showSignedOut();
-
-  // Load cloud save
-  try {
-    const snap = await getDoc(doc(db, 'saves', uid));
-    if (snap.exists()) {
-      const cloud = snap.data();
-      const local = JSON.parse(localStorage.getItem('pokethon_state') || '{}');
-      const cloudLen = cloud.completedLessons?.length ?? 0;
-      const localLen = (local.completedLessons || []).length;
-      if (cloudLen > localLen || (cloud.xp ?? 0) > (local.xp ?? 0)) {
-        window.dispatchEvent(new CustomEvent('pokethon-cloud-loaded', { detail: cloud }));
-      }
-    }
-  } catch(e) {
-    console.warn('Cloud load failed:', e.message);
-  }
-});
-
 // Attach button — ES modules are deferred so DOM is ready here
 const googleBtnContent = document.getElementById('google-signin-btn')?.innerHTML || '';
 document.getElementById('google-signin-btn')?.addEventListener('click', doGoogleSignIn);
+
+// Must await setPersistence before wiring any auth listeners,
+// otherwise Firebase may restore the session under SESSION persistence
+// and the one-shot listener races with the restored user.
+(async () => {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    console.log('[Pokéthon] Persistence set to LOCAL');
+  } catch(err) {
+    console.warn('[Pokéthon] setPersistence failed:', err.message);
+  }
+
+  // One-shot: only sign in anonymously if no session was restored from storage
+  const unsub = onAuthStateChanged(auth, user => {
+    unsub();
+    console.log('[Pokéthon] Boot auth check — user:', user ? (user.isAnonymous ? 'anonymous' : 'google') : 'none');
+    if (!user) {
+      signInAnonymously(auth).catch(err => {
+        console.warn('[Pokéthon] Anonymous auth failed:', err.message);
+        setSyncStatus('⚠️', 'Local only', 'Cloud unavailable');
+      });
+    }
+  });
+
+  // Persistent listener: update UI and load cloud save on any auth state change
+  onAuthStateChanged(auth, async user => {
+    if (!user) { showSignedOut(); return; }
+    uid      = user.uid;
+    isGoogle = !user.isAnonymous;
+
+    if (isGoogle) showSignedIn(user);
+    else showSignedOut();
+
+    // Load cloud save
+    try {
+      const snap = await getDoc(doc(db, 'saves', uid));
+      if (snap.exists()) {
+        const cloud = snap.data();
+        const local = JSON.parse(localStorage.getItem('pokethon_state') || '{}');
+        const cloudLen = cloud.completedLessons?.length ?? 0;
+        const localLen = (local.completedLessons || []).length;
+        if (cloudLen > localLen || (cloud.xp ?? 0) > (local.xp ?? 0)) {
+          window.dispatchEvent(new CustomEvent('pokethon-cloud-loaded', { detail: cloud }));
+        }
+      }
+    } catch(e) {
+      console.warn('[Pokéthon] Cloud load failed:', e.message);
+    }
+  });
+})();
 
 // ── Save ─────────────────────────────────────────────────────
 window.cloudSave = async function(stateObj) {
