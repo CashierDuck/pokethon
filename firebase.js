@@ -125,15 +125,20 @@ async function doGoogleSignIn() {
 // ── Boot ─────────────────────────────────────────────────────
 setSyncStatus('🔄', 'Connecting…', 'Connecting to cloud');
 
-// LOCAL persistence = survives page refresh and browser restart
-setPersistence(auth, browserLocalPersistence).then(() => {
-  signInAnonymously(auth).catch(err => {
-    console.warn('Anonymous auth failed:', err.message);
-    setSyncStatus('⚠️', 'Local only', 'Cloud unavailable');
-  });
-}).catch(err => {
+// LOCAL persistence — session survives page refresh
+// onAuthStateChanged fires once on load; if no user, sign in anonymously
+setPersistence(auth, browserLocalPersistence).catch(err => {
   console.warn('setPersistence failed:', err.message);
-  signInAnonymously(auth).catch(() => {});
+});
+
+const unsub = onAuthStateChanged(auth, user => {
+  unsub(); // unsubscribe after first call — the persistent listener below handles the rest
+  if (!user) {
+    signInAnonymously(auth).catch(err => {
+      console.warn('Anonymous auth failed:', err.message);
+      setSyncStatus('⚠️', 'Local only', 'Cloud unavailable');
+    });
+  }
 });
 
 onAuthStateChanged(auth, async user => {
