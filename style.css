@@ -997,6 +997,35 @@ code {
 }
 .quiz-btn:hover { background: var(--blue-muted); }
 .lesson-actions { margin-top: 2rem; }
+
+/* Challenge section */
+.challenge-section {
+  margin-top: 2rem;
+  border: 1px solid var(--blue);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #0d1117;
+}
+.challenge-header {
+  background: rgba(37,99,235,0.15);
+  border-bottom: 1px solid var(--blue);
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #93c5fd;
+  letter-spacing: 0.02em;
+}
+.challenge-prompt {
+  padding: 1rem;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+}
 .already-done {
   font-size: 0.85rem;
   color: var(--green);
